@@ -1,26 +1,389 @@
-@import "tailwindcss";
+/* app/globals.css */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background-color: #e6edf7;
+  color: #1f2933;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+button,
+select,
+input {
+  font-family: inherit;
+}
+
+/* Layout */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+
+.sidebar {
+  width: 230px;
+  background-color: #1f2937;
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.sidebar-logo-square {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background-color: #2563eb;
+  margin-right: 10px;
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.nav-item {
+  border: none;
+  background: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background-color: #111827;
+}
+
+.nav-item.active {
+  background-color: #2563eb;
+}
+
+.nav-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background-color: #9ca3af;
+  margin-right: 10px;
+}
+
+.nav-label-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  background-color: #f97316;
+  color: white;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 1px 7px;
+}
+
+.sidebar-footer {
+  margin-top: 20px;
+}
+
+.signout-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #9ca3af;
+  background: none;
+  color: #e5e7eb;
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.signout-btn:hover {
+  background-color: #111827;
+}
+
+/* Main content */
+
+.main-content {
+  flex: 1;
+  padding: 26px 40px;
+}
+
+/* Topbar */
+
+.topbar {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.topbar-controls {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-select {
+  min-width: 140px;
+  padding: 8px 32px 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  font-size: 14px;
+}
+
+.topbar-select:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.new-bid-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  background-color: #2563eb;
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.new-bid-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.topbar-search-wrapper {
+  grid-column: 1 / span 2;
+  justify-self: end;
+  position: relative;
+  width: 260px;
+}
+
+.topbar-search {
+  width: 100%;
+  padding: 7px 10px 7px 28px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.topbar-search:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+}
+
+/* Board */
+
+.board-section {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.day-card {
+  background-color: #f9fafb;
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+.day-heading {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* Table */
+
+.bids-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.bids-table th,
+.bids-table td {
+  padding: 10px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.bids-table thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.bids-table tbody tr:nth-child(even) {
+  background-color: #f3f4f6;
+}
+
+.project-name {
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.project-address {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.muted {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.person-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.pill {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background-color: #e5e7eb;
+  font-size: 11px;
+  color: #374151;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.actions-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.icon-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 3px;
+  margin-left: 4px;
+}
+
+/* Links */
+
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-top: 3px;
+  font-size: 13px;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+/* Empty state */
+
+.empty-state {
+  padding: 24px;
+  text-align: center;
+  background-color: #f9fafb;
+  border-radius: 14px;
+  border: 1px dashed #d1d5db;
+  color: #6b7280;
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 980px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 12px;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .sidebar-footer {
+    margin-left: auto;
+    margin-top: 0;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-controls {
+    justify-self: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .topbar-search-wrapper {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .actions-col {
+    text-align: left;
+  }
 }

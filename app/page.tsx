@@ -1,64 +1,354 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
 
-export default function Home() {
+import { useMemo, useState } from "react";
+
+type Status = "Bidding" | "Submitted" | "Awarded";
+
+type Bid = {
+  id: number;
+  projectName: string;
+  address: string;
+  bidDueDate: string; // YYYY-MM-DD
+  bidDueTime: string;
+  siteVisitDate: string | null;
+  siteVisitTime: string | null;
+  invitesFrom: string;
+  invitesMore?: number;
+  takeoffPerson: string;
+  takeoffStatus: "Assigned" | "Accepted";
+  estimator: string;
+  estimatorStatus: "Assigned" | "Pending";
+  status: Status;
+  teammate: string;
+};
+
+const BIDS: Bid[] = [
+  {
+    id: 1,
+    projectName: "The Big Box Store",
+    address: "123 Songbird Lane, Marietta",
+    bidDueDate: "2025-06-25",
+    bidDueTime: "2 p.m.",
+    siteVisitDate: null,
+    siteVisitTime: null,
+    invitesFrom: "Anderson",
+    takeoffPerson: "John C.",
+    takeoffStatus: "Assigned",
+    estimator: "TBD",
+    estimatorStatus: "Pending",
+    status: "Bidding",
+    teammate: "John C.",
+  },
+  {
+    id: 2,
+    projectName: "The Paper Factory",
+    address: "456 Hummingbird Dr, Athens",
+    bidDueDate: "2025-06-25",
+    bidDueTime: "2 p.m.",
+    siteVisitDate: "2025-06-21",
+    siteVisitTime: "3 p.m.",
+    invitesFrom: "Turner",
+    invitesMore: 3,
+    takeoffPerson: "Amy",
+    takeoffStatus: "Assigned",
+    estimator: "Scott",
+    estimatorStatus: "Assigned",
+    status: "Bidding",
+    teammate: "Amy",
+  },
+  {
+    id: 3,
+    projectName: "The Byrianni House",
+    address: "789 Samosa Court, Atlanta",
+    bidDueDate: "2025-06-25",
+    bidDueTime: "5 p.m.",
+    siteVisitDate: "2025-06-19",
+    siteVisitTime: "8 a.m.",
+    invitesFrom: "Mortensen",
+    takeoffPerson: "John C.",
+    takeoffStatus: "Accepted",
+    estimator: "Lisa",
+    estimatorStatus: "Assigned",
+    status: "Bidding",
+    teammate: "Lisa",
+  },
+  {
+    id: 4,
+    projectName: "The Big Box Store",
+    address: "123 Songbird Lane, Marietta",
+    bidDueDate: "2025-06-26",
+    bidDueTime: "2 p.m.",
+    siteVisitDate: "2025-06-25",
+    siteVisitTime: "9 a.m.",
+    invitesFrom: "Anderson",
+    takeoffPerson: "John C.",
+    takeoffStatus: "Assigned",
+    estimator: "TBD",
+    estimatorStatus: "Pending",
+    status: "Bidding",
+    teammate: "John C.",
+  },
+];
+
+const teamOptions = ["All Teammates", "John C.", "Amy", "Lisa", "Scott"];
+
+function formatDateHeading(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export default function HomePage() {
+  const [statusFilter, setStatusFilter] = useState<Status | "All">("Bidding");
+  const [teamFilter, setTeamFilter] = useState<string>("All Teammates");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredBids = useMemo(() => {
+    return BIDS.filter((bid) => {
+      if (statusFilter !== "All" && bid.status !== statusFilter) return false;
+      if (teamFilter !== "All Teammates" && bid.teammate !== teamFilter)
+        return false;
+
+      if (!searchTerm.trim()) return true;
+
+      const haystack = (
+        bid.projectName +
+        " " +
+        bid.address +
+        " " +
+        bid.invitesFrom +
+        " " +
+        bid.takeoffPerson
+      ).toLowerCase();
+
+      return haystack.includes(searchTerm.toLowerCase());
+    });
+  }, [statusFilter, teamFilter, searchTerm]);
+
+  const groupedByDate = useMemo(() => {
+    const map = new Map<string, Bid[]>();
+    filteredBids.forEach((bid) => {
+      if (!map.has(bid.bidDueDate)) {
+        map.set(bid.bidDueDate, []);
+      }
+      map.get(bid.bidDueDate)!.push(bid);
+    });
+
+    return Array.from(map.entries())
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([date, bids]) => ({
+        date,
+        bids,
+      }));
+  }, [filteredBids]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="app-shell">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <span className="sidebar-logo-square" />
+          <span className="sidebar-title">Bid Boardly</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <nav className="sidebar-nav">
+          <button className="nav-item active">
+            <span className="nav-icon" />
+            <span>Bid Board</span>
+          </button>
+          <button className="nav-item">
+            <span className="nav-icon" />
+            <span>Submitted Bids</span>
+          </button>
+          <button className="nav-item">
+            <span className="nav-icon" />
+            <span>Customers</span>
+          </button>
+          <button className="nav-item">
+            <span className="nav-icon" />
+            <span>Team</span>
+          </button>
+          <button className="nav-item">
+            <span className="nav-icon" />
+            <span className="nav-label-with-badge">
+              Notifications
+              <span className="badge">2</span>
+            </span>
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          <button className="nav-item">
+            <span className="nav-icon" />
+            <span>Settings</span>
+          </button>
+          <button className="signout-btn">Sign Out</button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="main-content">
+        <header className="topbar">
+          <h1 className="page-title">Bid Board</h1>
+
+          <div className="topbar-controls">
+            <select
+              className="topbar-select"
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as Status | "All")
+              }
+            >
+              <option value="Bidding">Bidding</option>
+              <option value="Submitted">Submitted</option>
+              <option value="Awarded">Awarded</option>
+              <option value="All">All Statuses</option>
+            </select>
+
+            <select
+              className="topbar-select"
+              value={teamFilter}
+              onChange={(e) => setTeamFilter(e.target.value)}
+            >
+              {teamOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+
+            <button className="new-bid-btn">+ New Bid</button>
+          </div>
+
+          <div className="topbar-search-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              className="topbar-search"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </div>
+        </header>
+
+        <section className="board-section">
+          {groupedByDate.length === 0 && (
+            <div className="empty-state">
+              No bids found for the selected filters.
+            </div>
+          )}
+
+          {groupedByDate.map((group) => (
+            <div key={group.date} className="day-card">
+              <h2 className="day-heading">
+                {formatDateHeading(group.date)}
+              </h2>
+
+              <table className="bids-table">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Bid Due</th>
+                    <th>Site Visit</th>
+                    <th>Invites From</th>
+                    <th>Takeoff</th>
+                    <th>Estimator</th>
+                    <th>Status</th>
+                    <th className="actions-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.bids.map((bid) => (
+                    <tr key={bid.id}>
+                      <td>
+                        <div className="project-name">
+                          {bid.projectName}
+                        </div>
+                        <div className="project-address">
+                          {bid.address}
+                        </div>
+                      </td>
+
+                      <td>
+                        <div>{new Date(bid.bidDueDate).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}</div>
+                        <div className="muted">{bid.bidDueTime}</div>
+                      </td>
+
+                      <td>
+                        {bid.siteVisitDate ? (
+                          <>
+                            <div>
+                              {new Date(bid.siteVisitDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  year: "numeric",
+                                }
+                              )}
+                            </div>
+                            <div className="muted">
+                              {bid.siteVisitTime}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="muted">TBD</span>
+                        )}
+                      </td>
+
+                      <td>
+                        <div>{bid.invitesFrom}</div>
+                        {bid.invitesMore && (
+                          <button className="link-button">
+                            See ({bid.invitesMore}) more
+                          </button>
+                        )}
+                      </td>
+
+                      <td>
+                        <div className="person-name">{bid.takeoffPerson}</div>
+                        <span className="pill">
+                          {bid.takeoffStatus}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="person-name">{bid.estimator}</div>
+                        <span className="pill">
+                          {bid.estimatorStatus}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className="status-text">{bid.status}</span>
+                      </td>
+
+                      <td className="actions-col">
+                        <button
+                          className="icon-btn"
+                          aria-label="Edit bid"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          className="icon-btn"
+                          aria-label="Delete bid"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </section>
       </main>
     </div>
   );
