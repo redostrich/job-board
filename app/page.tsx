@@ -180,13 +180,13 @@ export default function HomePage() {
               <span className="badge">2</span>
             </span>
           </button>
-        </nav>
-
-        <div className="sidebar-footer">
           <button className="nav-item">
             <span className="nav-icon" />
             <span>Settings</span>
           </button>
+        </nav>
+
+        <div className="sidebar-footer">
           <button className="signout-btn">Sign Out</button>
         </div>
       </aside>
