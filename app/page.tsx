@@ -9,19 +9,27 @@ type Bid = {
   id: number;
   projectName: string;
   address: string;
-  bidDueDate: string; // YYYY-MM-DD
+
+  bidDueDate: string; // YYYY-MM-DD (used for grouping)
   bidDueTime: string;
+
   siteVisitDate: string | null;
   siteVisitTime: string | null;
+
   invitesFrom: string;
   invitesMore?: number;
+
   takeoffPerson: string;
   takeoffStatus: "Assigned" | "Accepted";
+
   estimator: string;
   estimatorStatus: "Assigned" | "Pending";
+
   status: Status;
   teammate: string;
 };
+
+type GroupMode = "daily" | "weekly" | "monthly";
 
 const BIDS: Bid[] = [
   {
@@ -93,8 +101,15 @@ const BIDS: Bid[] = [
 
 const teamOptions = ["All Teammates", "John C.", "Amy", "Lisa", "Scott"];
 
+/* ----------------------- Date helpers ----------------------- */
+
+function parseLocalDate(dateStr: string) {
+  // force local midnight so grouping doesn't shift by timezone
+  return new Date(dateStr + "T00:00:00");
+}
+
 function formatDateHeading(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00");
+  const date = parseLocalDate(dateStr);
   return date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -103,11 +118,101 @@ function formatDateHeading(dateStr: string): string {
   });
 }
 
+function formatMMDDYYYY(dateStr: string): string {
+  return parseLocalDate(dateStr).toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function getWeekStart(date: Date) {
+  // Monday as start of week
+  const d = new Date(date);
+  const day = d.getDay(); // 0 Sun ... 6 Sat
+  const diff = (day === 0 ? -6 : 1) - day; // shift to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getWeekKey(dateStr: string) {
+  const d = parseLocalDate(dateStr);
+  const monday = getWeekStart(d);
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, "0");
+  const dd = String(monday.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`; // key = Monday date
+}
+
+function formatWeekHeading(weekKey: string) {
+  const start = parseLocalDate(weekKey);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+
+  const startText = start.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const endText = end.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return `Week of ${startText} – ${endText}`;
+}
+
+function getMonthKey(dateStr: string) {
+  const d = parseLocalDate(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${yyyy}-${mm}`; // key = YYYY-MM
+}
+
+function formatMonthHeading(monthKey: string) {
+  const [yyyy, mm] = monthKey.split("-");
+  const d = new Date(Number(yyyy), Number(mm) - 1, 1);
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/* ----------------------- Grouping ----------------------- */
+
+function groupBids(bids: Bid[], mode: GroupMode) {
+  const map = new Map<string, Bid[]>();
+
+  for (const bid of bids) {
+    let key: string;
+
+    if (mode === "weekly") key = getWeekKey(bid.bidDueDate);
+    else if (mode === "monthly") key = getMonthKey(bid.bidDueDate);
+    else key = bid.bidDueDate; // daily
+
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(bid);
+  }
+
+  const groups = Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, bids]) => ({ key, bids }));
+
+  return groups;
+}
+
+/* ----------------------- Page ----------------------- */
+
 export default function HomePage() {
   const [statusFilter, setStatusFilter] = useState<Status | "All">("Bidding");
-  const [teamFilter, setTeamFilter] = useState<string>("All Teammates");
+  const [teamFilter, setTeamFilter] = useState("All Teammates");
+  const [groupMode, setGroupMode] = useState<GroupMode>("daily");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // 1) filter + search first
   const filteredBids = useMemo(() => {
     return BIDS.filter((bid) => {
       if (statusFilter !== "All" && bid.status !== statusFilter) return false;
@@ -123,29 +228,29 @@ export default function HomePage() {
         " " +
         bid.invitesFrom +
         " " +
-        bid.takeoffPerson
+        bid.takeoffPerson +
+        " " +
+        bid.estimator +
+        " " +
+        bid.status +
+        " " +
+        bid.teammate
       ).toLowerCase();
 
       return haystack.includes(searchTerm.toLowerCase());
     });
   }, [statusFilter, teamFilter, searchTerm]);
 
-  const groupedByDate = useMemo(() => {
-    const map = new Map<string, Bid[]>();
-    filteredBids.forEach((bid) => {
-      if (!map.has(bid.bidDueDate)) {
-        map.set(bid.bidDueDate, []);
-      }
-      map.get(bid.bidDueDate)!.push(bid);
-    });
+  // 2) group after filtering
+  const grouped = useMemo(() => {
+    return groupBids(filteredBids, groupMode);
+  }, [filteredBids, groupMode]);
 
-    return Array.from(map.entries())
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([date, bids]) => ({
-        date,
-        bids,
-      }));
-  }, [filteredBids]);
+  function renderGroupHeading(key: string) {
+    if (groupMode === "weekly") return formatWeekHeading(key);
+    if (groupMode === "monthly") return formatMonthHeading(key);
+    return formatDateHeading(key); // daily
+  }
 
   return (
     <div className="app-shell">
@@ -176,8 +281,7 @@ export default function HomePage() {
           <button className="nav-item">
             <span className="nav-icon" />
             <span className="nav-label-with-badge">
-              Notifications
-              <span className="badge">2</span>
+              Notifications <span className="badge">2</span>
             </span>
           </button>
           <button className="nav-item">
@@ -194,9 +298,10 @@ export default function HomePage() {
       {/* Main content */}
       <main className="main-content">
         <header className="topbar">
-          <h1 className="page-title">Bid Board</h1>
+          {/* LEFT side: title + filters (matches screenshot) */}
+          <div className="topbar-left">
+            <h1 className="page-title">Bid Board</h1>
 
-          <div className="topbar-controls">
             <select
               className="topbar-select"
               value={statusFilter}
@@ -222,32 +327,44 @@ export default function HomePage() {
               ))}
             </select>
 
-            <button className="new-bid-btn">+ New Bid</button>
+            <select
+              className="topbar-select"
+              value={groupMode}
+              onChange={(e) => setGroupMode(e.target.value as GroupMode)}
+              aria-label="Group by"
+            >
+              <option value="daily">Group by Date</option>
+              <option value="weekly">Group by Week</option>
+              <option value="monthly">Group by Month</option>
+            </select>
           </div>
 
-          <div className="topbar-search-wrapper">
-            <span className="search-icon">🔍</span>
-            <input
-              className="topbar-search"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* RIGHT side: action + search */}
+          <div className="topbar-right">
+            <button className="new-bid-btn">+ New Bid</button>
+
+            <div className="topbar-search-wrapper">
+              <span className="search-icon">🔍</span>
+              <input
+                className="topbar-search"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </header>
 
         <section className="board-section">
-          {groupedByDate.length === 0 && (
+          {grouped.length === 0 && (
             <div className="empty-state">
               No bids found for the selected filters.
             </div>
           )}
 
-          {groupedByDate.map((group) => (
-            <div key={group.date} className="day-card">
-              <h2 className="day-heading">
-                {formatDateHeading(group.date)}
-              </h2>
+          {grouped.map((group) => (
+            <div key={group.key} className="day-card">
+              <h2 className="day-heading">{renderGroupHeading(group.key)}</h2>
 
               <table className="bids-table">
                 <thead>
@@ -262,38 +379,26 @@ export default function HomePage() {
                     <th className="actions-col">Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {group.bids.map((bid) => (
                     <tr key={bid.id}>
                       <td>
-                        <div className="project-name">
-                          {bid.projectName}
-                        </div>
-                        <div className="project-address">
-                          {bid.address}
-                        </div>
+                        <div className="project-name">{bid.projectName}</div>
+                        <div className="project-address">{bid.address}</div>
                       </td>
 
                       <td>
-                        <div>{new Date(bid.bidDueDate).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })}</div>
+                        <div>{formatMMDDYYYY(bid.bidDueDate)}</div>
                         <div className="muted">{bid.bidDueTime}</div>
                       </td>
 
                       <td>
                         {bid.siteVisitDate ? (
                           <>
-                            <div>
-                              {new Date(bid.siteVisitDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "2-digit",
-                                  day: "2-digit",
-                                  year: "numeric",
-                                }
-                              )}
-                            </div>
+                            <div>{formatMMDDYYYY(bid.siteVisitDate)}</div>
                             <div className="muted">
-                              {bid.siteVisitTime}
+                              {bid.siteVisitTime ?? ""}
                             </div>
                           </>
                         ) : (
@@ -312,16 +417,12 @@ export default function HomePage() {
 
                       <td>
                         <div className="person-name">{bid.takeoffPerson}</div>
-                        <span className="pill">
-                          {bid.takeoffStatus}
-                        </span>
+                        <span className="pill">{bid.takeoffStatus}</span>
                       </td>
 
                       <td>
                         <div className="person-name">{bid.estimator}</div>
-                        <span className="pill">
-                          {bid.estimatorStatus}
-                        </span>
+                        <span className="pill">{bid.estimatorStatus}</span>
                       </td>
 
                       <td>
@@ -329,16 +430,10 @@ export default function HomePage() {
                       </td>
 
                       <td className="actions-col">
-                        <button
-                          className="icon-btn"
-                          aria-label="Edit bid"
-                        >
+                        <button className="icon-btn" aria-label="Edit bid">
                           ✎
                         </button>
-                        <button
-                          className="icon-btn"
-                          aria-label="Delete bid"
-                        >
+                        <button className="icon-btn" aria-label="Delete bid">
                           ✕
                         </button>
                       </td>

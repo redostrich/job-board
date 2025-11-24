@@ -141,28 +141,28 @@ input {
   padding: 26px 40px;
 }
 
-/* Topbar */
+/* Topbar (UPDATED to match screenshot) */
 
 .topbar {
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-template-rows: auto auto;
-  gap: 12px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 26px;
+  gap: 16px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .page-title {
   font-size: 26px;
   font-weight: 600;
   margin: 0;
-}
-
-.topbar-controls {
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  margin-right: 4px;
 }
 
 .topbar-select {
@@ -172,11 +172,19 @@ input {
   border: 1px solid #d1d5db;
   background-color: white;
   font-size: 14px;
+  cursor: pointer;
 }
 
 .topbar-select:focus {
   outline: 2px solid #2563eb;
   outline-offset: 1px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
 }
 
 .new-bid-btn {
@@ -188,6 +196,7 @@ input {
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .new-bid-btn:hover {
@@ -195,8 +204,6 @@ input {
 }
 
 .topbar-search-wrapper {
-  grid-column: 1 / span 2;
-  justify-self: end;
   position: relative;
   width: 260px;
 }
@@ -370,16 +377,16 @@ input {
   }
 
   .topbar {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .topbar-controls {
-    justify-self: flex-start;
-    flex-wrap: wrap;
+  .topbar-right {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .topbar-search-wrapper {
-    justify-self: stretch;
     width: 100%;
   }
 
